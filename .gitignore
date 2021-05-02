@@ -1,6 +1,7 @@
+
 # configuration directory
 .vscode
-
+.clang-format
 # exe directory
 exe
 
