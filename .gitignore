@@ -1,6 +1,5 @@
 #test files
 *.bmp
-
 # configuration directory
 .vscode
 .clang-format
