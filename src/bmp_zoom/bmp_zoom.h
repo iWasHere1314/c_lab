@@ -32,13 +32,14 @@ typedef struct tagBITMAPINFOHEADER {
 /*
  * 函数名称：bmp_zoom
  * 函数功能：图片放大缩小
- * 参数：
- * 返回值：int
+ * 参数: const char *src( 要被放缩的图片名称 ), const char *dst( 放缩结果的名称 ) ,
+ *       int percent( 放缩的百分比 )
+ * 返回值：bool( 表示操作是否存在成功 )
  */
 bool bmp_zoom( const char *src, const char *dst , int percent ){
-    FILE *fpsrc = fopen(src, "rb");
-    FILE *fpdst = fopen(dst, "wb");
-    if( !fpsrc || !fpdst ){
+    FILE *fpsrc = fopen(src, "rb");// 打开源图片
+    FILE *fpdst = fopen(dst, "wb");// 创建目标图片
+    if( !fpsrc || !fpdst ){// 打开失败
         return false;
     }
     BITMAPFILEHEADER head;
@@ -47,6 +48,7 @@ bool bmp_zoom( const char *src, const char *dst , int percent ){
 	memset(&info,0,sizeof(BITMAPINFOHEADER));
     fread(&head, sizeof(BITMAPFILEHEADER), 1, fpsrc );
     fread(&info, sizeof(BITMAPINFOHEADER), 1, fpsrc );
+        // 获取源图片文件头部信息
     unsigned int src_width = info.biWidth;   //获取原图片的宽
     unsigned int src_height = info.biHeight; //获取原图片的高
 
@@ -69,9 +71,12 @@ bool bmp_zoom( const char *src, const char *dst , int percent ){
     fwrite(&info, sizeof(BITMAPINFOHEADER), 1, fpdst);
 
     unsigned char *dst_data = (unsigned char *)malloc(dst_width * dst_height * COLOR_WIDTH);
+        //创建存储图片内容的缓冲区
     if( !dst_data ){
         return false;
     }
+
+    //采用线性插值法进行图片放缩
     for(unsigned int dst_y = 0; dst_y<dst_height; ++dst_y){
         unsigned int src_y = (unsigned int)(rate_y * dst_y);
         for(unsigned int dst_x=0; dst_x<dst_width; ++dst_x){
@@ -79,6 +84,8 @@ bool bmp_zoom( const char *src, const char *dst , int percent ){
             memcpy( dst_data+(dst_y*dst_width+dst_x)*COLOR_WIDTH, src_data+(src_y*src_width+src_x)*COLOR_WIDTH, COLOR_WIDTH );
         }
     }
+
+    //结果写入文件
     fseek(fpdst, 54, SEEK_SET);
     fwrite(dst_data, dst_width * dst_height * 3, 1, fpdst);
 

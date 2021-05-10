@@ -3,37 +3,46 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdbool.h>
-/*  */
+/* 管理员操作的相关模块 */
+
+/*
+ * 函数名称：admin_add_song
+ * 函数功能：为ktv添加歌曲
+ * 参数: 无
+ * 返回值：void
+ */
 void admin_add_song(){
     FILE *songs_list = fopen("/home/yyang/MyProgram/c_lab/src/ktv/songs", "r");
     if( !songs_list ){
         printf( "打开歌单出错，目前无法进行添加操作\n");
         return;
-    }
+    }// 打开现有歌曲列表
     printf("\n=================添加歌曲=================\n");
-    char name[512];
-    char singer[512];
-    char cur_name[512];
-    char cur_singer[512];
-    bool is_existed = false;
+    char name[512];// 输入的歌曲名
+    char singer[512];// 输入的作者名
+    char cur_name[512];// 现在遍历到的歌曲名
+    char cur_singer[512];// 现在遍历到的作者名
+    bool is_existed = false;// 表示该作者的该歌曲已经在系统中
     printf("请输入你要添加的歌曲的名称\n");
     scanf( "%s", name );
     printf("请输入该歌曲的歌手名称\n");
     scanf( "%s", singer );
     while( fscanf(songs_list, "%s", cur_name) != EOF && fscanf(songs_list, "%s", cur_singer )){
-        bool flag = strcmp( cur_singer, singer ) == 0 && strcmp( cur_name, name ) == 0;
-        if( flag ){
+        // 与现存歌曲列表中的结果逐一比对
+        // 若找到对应的歌曲, 则设置存在标志并退出比较
+        if( strcmp( cur_singer, singer ) == 0 && strcmp( cur_name, name ) == 0 ){
             is_existed = true;
             break;
         }
     }
-    if( is_existed ){
+    if( is_existed ){// 如果已经存在
         printf("该歌手的该歌曲已经存在曲库之中，无法重复添加\n");
         fclose( songs_list );
         return;
     }
     fclose( songs_list );
     songs_list = fopen("/home/yyang/MyProgram/c_lab/src/ktv/songs", "a");
+        // 以附加写入方式重新打开文件, 准备添加歌曲
     if( !songs_list ){
         printf( "打开歌单出错，目前无法进行添加操作\n");
         return;
@@ -43,13 +52,14 @@ void admin_add_song(){
     strcpy( directory+pre_len, singer );
     *(directory+pre_len+strlen(singer) ) = '_'; 
     strcpy( directory+pre_len+strlen(singer)+1, name );
+        // 新添加的歌曲的歌词文件所存放的路径名
     //printf("%s\n", directory);
     FILE *song = fopen(directory, "w+");
     if( !song ){
         printf( "创建歌曲出错，目前无法进行添加操作\n");
         fclose( songs_list );
         return;
-    }
+    }// 打开新歌曲的歌词文件
     printf( "请输入这首歌的歌词，歌词以由仅含有一个\'#\'的新一行为结束标志\n");
     char txt[512];
     while( scanf("%s",txt) && txt[0] != '#' ){
@@ -62,25 +72,37 @@ void admin_add_song(){
     fclose( song );
     return;
 }
+
+/*
+ * 函数名称：admin_delete_song
+ * 函数功能：为ktv删除歌曲
+ * 参数: 无
+ * 返回值：void
+ */
 void admin_delete_song(){
     FILE *songs_list = fopen("/home/yyang/MyProgram/c_lab/src/ktv/songs", "r");
+        // 未执行删除时的歌曲列表
     FILE *new_song_list = fopen("/home/yyang/MyProgram/c_lab/src/ktv/songs.temp", "w");
+        // 执行删除后的歌曲列表
     if( !songs_list || !new_song_list ){
         printf( "打开歌单出错，目前无法进行删除操作\n");
         return;
     }
     printf("\n=================删除歌曲=================\n");
-    char name[512];
-    char singer[512];
-    char cur_name[512];
-    char cur_singer[512];
+    char name[512];// 输入的歌曲名
+    char singer[512];// 输入的作者名
+    char cur_name[512];// 现在遍历到的歌曲名
+    char cur_singer[512];// 现在遍历到的作者名
+    bool is_existed = false;// 表示该作者的该歌曲已经在系统中
     printf("请输入你要删除的歌曲的名称\n");
     scanf( "%s", name );
     printf("请输入该歌曲的歌手名称\n");
     scanf( "%s", singer );
     while( fscanf(songs_list, "%s", cur_name) != EOF && fscanf(songs_list, "%s", cur_singer )){
-        bool flag = strcmp( cur_singer, singer ) == 0 && strcmp( cur_name, name ) == 0;
-        if( flag ){
+        // 与现存歌曲列表中的结果逐一比对
+        // 若找到对应的歌曲, 则不写入新的歌曲列表
+        // 否则,写入新的歌曲列表
+        if( strcmp( cur_singer, singer ) == 0 && strcmp( cur_name, name ) == 0 ){
             continue;
         }
         fprintf(new_song_list, "%s %s\n", cur_name, cur_singer );
@@ -90,15 +112,24 @@ void admin_delete_song(){
     strcpy( directory+pre_len, singer );
     *(directory+pre_len+strlen(singer) ) = '_'; 
     strcpy( directory+pre_len+strlen(singer)+1, name );
+        // 新删除的歌曲的歌词文件所存放的路径名
     fclose( songs_list );
     fclose( new_song_list );
-    remove( "/home/yyang/MyProgram/c_lab/src/ktv/songs" );
-    remove( directory );
+    remove( "/home/yyang/MyProgram/c_lab/src/ktv/songs" );// 移除旧歌曲列表
+    remove( directory );// 移除要删除的歌曲文件的歌词文件
     rename( "/home/yyang/MyProgram/c_lab/src/ktv/songs.temp", "/home/yyang/MyProgram/c_lab/src/ktv/songs" );
+        // 重命名新的歌曲列表的文件名
     printf("歌曲删除成功\n");
 }
+
+/*
+ * 函数名称：admin
+ * 函数功能：打开管理员模式
+ * 参数: 无
+ * 返回值：void
+ */
 void admin( ){
-    int choice;
+    int choice;// 表示用户所选操作
     while(1){
         printf("\n================管理员模式================\n");
         printf("*****************功能列表*****************\n");
@@ -118,7 +149,14 @@ void admin( ){
     }
 }
 
-/*  */
+/* 用户操作的相关模块 */
+
+/*
+ * 函数名称：user_find_song_singer
+ * 函数功能：查找某一歌手的所演唱的歌曲
+ * 参数: 无
+ * 返回值：void
+ */
 void user_find_song_singer(){
     FILE *songs_list = fopen("/home/yyang/MyProgram/c_lab/src/ktv/songs", "r");
     if( !songs_list ){
@@ -126,21 +164,30 @@ void user_find_song_singer(){
         return;
     }
     printf("\n=================查找歌曲=================\n");
-    char singer[512];
-    char cur_name[512];
-    char cur_singer[512];
+    char singer[512];// 输入的作者名
+    char cur_name[512];// 现在遍历到的歌曲名
+    char cur_singer[512];// 现在遍历到的作者名
     printf("请输入你要查询的歌手的名称\n");
     scanf( "%s", singer );
     printf("****************查询结果****************\n");
     while( fscanf(songs_list, "%s", cur_name) != EOF && fscanf(songs_list, "%s", cur_singer )){
-        bool flag = strcmp( cur_singer, singer ) == 0;
-        if( flag ){
+        // 与现存歌曲列表中的结果逐一比对
+        // 若找到对应歌手的歌曲, 则予以显示
+        // 否则, 不显示
+        if( strcmp( cur_singer, singer ) == 0 ){
             printf("%s - %s\n", cur_name, cur_singer );
         }
     }
     printf("查询结束\n");
     fclose( songs_list );
 }
+
+/*
+ * 函数名称：user_find_song_singer
+ * 函数功能：查找同名的所有歌曲
+ * 参数: 无
+ * 返回值：void
+ */
 void user_find_song_name(){
     FILE *songs_list = fopen("/home/yyang/MyProgram/c_lab/src/ktv/songs", "r");
     if( !songs_list ){
@@ -148,21 +195,30 @@ void user_find_song_name(){
         return;
     }
     printf("\n=================查找歌曲=================\n");
-    char name[512];
-    char cur_name[512];
-    char cur_singer[512];
+    char name[512];// 输入的歌曲
+    char cur_name[512];// 现在遍历到的歌曲名
+    char cur_singer[512];// 现在遍历到的作者名
     printf("请输入你要查询的歌曲的名称\n");
     scanf( "%s", name );
     printf("****************查询结果****************\n");
     while( fscanf(songs_list, "%s", cur_name) != EOF && fscanf(songs_list, "%s", cur_singer )){
-        bool flag = strcmp( cur_name, name ) == 0;
-        if( flag ){
+        // 与现存歌曲列表中的结果逐一比对
+        // 若找到对应歌名的歌曲, 则予以显示
+        // 否则, 不显示
+        if( strcmp( cur_name, name ) == 0 ){
             printf("%s - %s\n", cur_name, cur_singer );
         }
     }
     printf("查询结束\n");
     fclose( songs_list );
 }
+
+/*
+ * 函数名称：user_find_song
+ * 函数功能：用户查找歌曲选项的二级界面
+ * 参数: 无
+ * 返回值：void
+ */
 void user_find_song(){
     int choice;
     while(1){
@@ -183,6 +239,13 @@ void user_find_song(){
         }
     }
 } 
+
+/*
+ * 函数名称：user_play_song
+ * 函数功能：播放歌曲
+ * 参数: 无
+ * 返回值：void
+ */
 void user_play_song(){
     FILE *songs_list = fopen("/home/yyang/MyProgram/c_lab/src/ktv/songs", "r");
     if( !songs_list ){
@@ -190,18 +253,19 @@ void user_play_song(){
         return;
     }
     printf("\n=================点播歌曲=================\n");
-    char name[512];
-    char singer[512];
-    char cur_name[512];
-    char cur_singer[512];
+    char name[512];// 输入的歌曲名
+    char singer[512];// 输入的作者名
+    char cur_name[512];// 现在遍历到的歌曲名
+    char cur_singer[512];// 现在遍历到的作者名
     printf("请输入你要点播的歌曲的名称\n");
     scanf( "%s", name );
     printf("请输入该歌曲的歌手名称\n");
     scanf( "%s", singer );
-    bool is_existed = false;
+    bool is_existed = false;// 是否存在对应的歌曲
     while( fscanf(songs_list, "%s", cur_name) != EOF && fscanf(songs_list, "%s", cur_singer )){
-        bool flag = strcmp( cur_singer, singer ) == 0 && strcmp( cur_name, name ) == 0;
-        if( flag ){
+        // 与现存歌曲列表中的结果逐一比对
+        // 若找到对应歌手的歌曲, 则设置存在标志
+        if( strcmp( cur_singer, singer ) == 0 && strcmp( cur_name, name ) == 0 ){
             is_existed = true;
             break;
         }
@@ -216,6 +280,7 @@ void user_play_song(){
     strcpy( directory+pre_len, singer );
     *(directory+pre_len+strlen(singer) ) = '_'; 
     strcpy( directory+pre_len+strlen(singer)+1, name );
+        // 要播放的歌曲的歌词文件所存放的路径名
     FILE *song = fopen(directory, "r");
     if( !song ){
         printf( "无法打开该歌曲歌词，点歌失败\n");
@@ -225,11 +290,18 @@ void user_play_song(){
     char buf[512];
     while( fgets(buf, 512,song ) != NULL ){
         printf( "%s", buf );
-    }
+    }// 逐行显示歌词
     fclose( songs_list );
     fclose( song );
     printf("点歌成功\n");
 }
+
+/*
+ * 函数名称：user
+ * 函数功能：打开用户模式
+ * 参数: 无
+ * 返回值：void
+ */
 void user( ){
     int choice;
     while(1){
@@ -251,20 +323,28 @@ void user( ){
     }
 }
 
+/* 开始模块 */
 
+/*
+ * 函数名称：ktv_start
+ * 函数功能：开始使用ktv
+ * 参数: char user_level( 操作者的身份 ), const char *name( 操作者的姓名 )
+ * 返回值：void
+ */
 void ktv_start( char user_level, const char *name ){
-    if( user_level == 'a' ){
+    if( user_level == 'a' ){// 管理员模式
         FILE *admin_list = fopen( "/home/yyang/MyProgram/c_lab/src/ktv/admin", "r" );
         if( !admin_list ){
             printf("打开管理员列表失败，无法进行验证，程序结束运行。\n");
             return;
-        }
-        char buf[512];
+        }// 打开管理员名称列表, 准备进行验证
+        char buf[512];// 临时缓冲区
         while( fscanf(admin_list,"%s", buf) != EOF ){
-            bool flag = strcmp( buf, name ) == 0;
-            if( flag ){
+            // 与管理员列表中的名称逐一比对
+            // 若发现该名管理员, 则开启管理员界面, 操作结束后退出系统
+            if( strcmp( buf, name ) == 0 ){
                 printf("验证通过，正在进入系统\n");
-                admin();
+                admin();// 打开管理员操作界面
                 printf("已退出系统，欢迎下次使用。\n");
                 fclose(admin_list);
                 return;
@@ -273,18 +353,20 @@ void ktv_start( char user_level, const char *name ){
         printf("该管理员未登记入系统中，请核对名称后重试。\n");
         fclose(admin_list);
     }
-    else if( user_level == 'u' ){
+    else if( user_level == 'u' ){// 用户模式
         FILE *user_list = fopen( "/home/yyang/MyProgram/c_lab/src/ktv/user", "r" );
         if( !user_list ){
             printf("打开用户列表失败，无法进行验证，程序结束运行。\n");
             return;
-        }
+        }// 打开用户名称列表, 准备进行验证
         char buf[512];
         while( fscanf(user_list,"%s", buf) != EOF ){
+            // 与用户列表中的名称逐一比对
+            // 若发现该名用户, 则开启用户界面, 操作结束后退出系统
             bool flag = strcmp( buf, name ) == 0;
             if( flag ){
                 printf("验证通过，正在进入系统\n");
-                user();
+                user();// 打开用户操作界面
                 printf("已退出系统，欢迎下次使用。\n");
                 fclose(user_list);
                 return;
@@ -293,7 +375,7 @@ void ktv_start( char user_level, const char *name ){
         fclose(user_list);
         printf("该用户未登记入系统中，请核对名称后重试。\n");
     }
-    else{
+    else{// 若非以上两者, 说明存在错误
         printf("用户类型错误，请核对输入后重新启动程序。\n");
     }
     return;
